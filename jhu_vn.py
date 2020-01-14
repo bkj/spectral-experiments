@@ -16,6 +16,8 @@ from sklearn.model_selection import train_test_split
 
 from graspy.embed import AdjacencySpectralEmbed as ASE
 
+np.random.seed(1)
+
 # --
 # Helpers
 
@@ -61,14 +63,14 @@ unique_coarse_labels = np.unique(coarse_labels)
 # --
 # Fit ASE
 
-np.random.seed(1)
-
 A = nx.to_numpy_array(G)
 
-X_hat = ASE().fit_transform(A)
-X_hat = np.concatenate(X_hat, axis=1)
+X_hat = ASE(algorithm='full').fit_transform(A)
+X_hat = np.column_stack(X_hat)
 
-n, d = X_hat.shape
+# >>
+
+# <<
 
 # --
 # Train classifiers
