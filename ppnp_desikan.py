@@ -42,15 +42,16 @@ def parse_args():
     parser.add_argument('--lr',            type=int,   default=0.01)
     
     parser.add_argument('--seed',          type=int,   default=123)
-    return parser.parse_args()
+    args = parser.parse_args()
+    
+    assert (args.ppr_inpath is None) or (args.ppr_outpath is None), 'cannot set ppr_inpath and ppr_outpath'
+    if args.ppr_inpath is None:
+        assert args.ppr_outpath is not None, 'if no ppr_inpath, must set ppr_outpath to cache ppr matrix'
+    
+    return args
 
 args = parse_args()
 set_seeds(args.seed)
-
-# >>
-# !! Development
-args.ppr_inpath = 'ppr_array.npy'
-# <<
 
 # --
 # IO
@@ -67,7 +68,8 @@ n_nodes = adj.shape[0]
 # Precompute PPR
 
 if args.ppr_inpath is None:
-    assert args.ppr_outpath is not None
+    print(f'ppnp_desikan.py: computing PPNP, caching to {args.ppr_outpath}', file=sys.stderr)
+    
     ppr_array = exact_ppr_joblib(adj, alpha=args.ppr_alpha)
     np.fill_diagonal(ppr_array, 0)
     np.save(args.ppr_outpath, ppr_array)

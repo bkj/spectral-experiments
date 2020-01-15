@@ -51,3 +51,15 @@ python jhu_vn_maggot.py --mode ase
 
 python jhu_vn_maggot.py --mode lse
 # ... failing ...
+
+# --
+# Desikan
+
+# prep
+python prep_desikan.py
+
+# run PPNP
+python ppnp_desikan.py \
+    --ppr-outpath ./data/DS72784/subj1-scan1.ppr_array.npy
+
+# run ASE

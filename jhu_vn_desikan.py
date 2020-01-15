@@ -25,8 +25,8 @@ from helpers import set_seeds, save_csr, train_stop_valid_split
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--graph-inpath',  type=str,   default='./data/DS72784/subj1-scan1.graphml')
-    parser.add_argument('--label-inpath',  type=str,   default='./data/DS72784/DS72784_desikan.csv')
+    parser.add_argument('--graph-inpath',  type=str,   default='./data/DS72784/subj1-scan1.A_ptr.npy')
+    parser.add_argument('--label-inpath',  type=str,   default='./data/DS72784/subj1-scan1.y.npy')
     parser.add_argument('--p-train',       type=float, default=0.1)
     parser.add_argument('--seed',          type=int,   default=123)
     return parser.parse_args()
@@ -38,42 +38,19 @@ set_seeds(args.seed)
 # --
 # IO
 
-G = nx.read_graphml(args.graph_inpath)
-
-labels       = pd.read_csv(args.label_inpath).set_index('dsreg')
-label_lookup = dict(zip(labels.index, labels.values.argmax(axis=-1)))
-
-node_names  = [int(G.nodes[n]['name']) for n in G.nodes]
-y           = np.array([label_lookup[n] for n in node_names])
-
-# Remap y to sequential zero-indexed integers
-uy      = list(set(y))
-y_remap = dict(zip(uy, range(len(uy))))
-y       = np.array([y_remap[yy] for yy in y])
-
-n_nodes = len(G.nodes)
+A_ptr = load_csr(args.graph_inpath)
+y     = np.load(args.label_inpath)
 
 # --
-# Fit ASE
+# Compute ASE
 
-A      = nx.to_numpy_array(G)
-A_ptr  = pass_to_ranks(A, method='simple-nonzero')
 X_hat  = AdjacencySpectralEmbed().fit_transform(A_ptr)
 nX_hat = normalize(X_hat, axis=1, norm='l2')
 
-save_csr('data/DS72784/subj1-scan1.A_ptr.npy', A_ptr)
-np.save('data/DS72784/subj1-scan1.y.npy', y)
-
 # --
 # Train/test split
-# `train_stop_valid_split` is used to match `ppnp` methods, which
-#  may use a `stop` split for early stopping
 
-idx_train, idx_stop, idx_valid = \
-    train_stop_valid_split(n_nodes, p=[0.05, 0.05, 0.9], random_state=111)
-
-idx_train = np.concatenate([idx_train, idx_stop])
-del idx_stop
+idx_train, idx_valid = train_test_split(np.arange(n_nodes), train_size=args.p_train, test_size=1 - args.p_train)
 
 nX_train, nX_valid = nX_hat[idx_train], nX_hat[idx_valid]
 y_train, y_valid   = y[idx_train], y[idx_valid]
@@ -85,14 +62,10 @@ y_train, y_valid   = y[idx_train], y[idx_valid]
 clf = RandomForestClassifier(n_estimators=512, n_jobs=10)
 clf = clf.fit(nX_train, y_train)
 
-prob_valid = clf.predict_proba(nX_valid)
-pred_valid = prob_valid.argmax(axis=-1)
+pred_valid = clf.predict(nX_valid)
 
 print({
     "acc"      : metrics.accuracy_score(y_valid, pred_valid),
     "f1_macro" : metrics.f1_score(y_valid, pred_valid, average='macro'),
     "f1_micro" : metrics.f1_score(y_valid, pred_valid, average='micro'),
 })
-
-
-
