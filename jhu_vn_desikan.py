@@ -11,9 +11,9 @@ import networkx as nx
 from scipy import sparse as sp
 
 from sklearn import metrics
+from sklearn.preprocessing import normalize
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.preprocessing import normalize
 
 from graspy.utils import pass_to_ranks
 from graspy.embed import AdjacencySpectralEmbed
@@ -64,6 +64,7 @@ y           = np.array([label_lookup[n] for n in node_names])
 A     = nx.to_numpy_array(G)
 A_ptr = pass_to_ranks(A, method='simple-nonzero')
 save_csr('data/DS72784/subj1-scan1.A_ptr.npy', A_ptr)
+np.save('data/DS72784/subj1-scan1.y.npy', y)
 
 X_hat  = AdjacencySpectralEmbed().fit_transform(A_ptr)
 nX_hat = normalize(X_hat, axis=1, norm='l2')
