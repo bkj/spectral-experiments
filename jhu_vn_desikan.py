@@ -41,6 +41,8 @@ set_seeds(args.seed)
 A_ptr = load_csr(args.graph_inpath).toarray()
 y     = np.load(args.label_inpath)
 
+n_nodes = A_ptr.shape[0]
+
 # --
 # Compute ASE
 

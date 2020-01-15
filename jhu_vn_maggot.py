@@ -64,10 +64,15 @@ A = nx.to_numpy_array(G)
 
 if args.mode == 'ase':
     embedder = AdjacencySpectralEmbed(algorithm='full')
+    X_hat = embedder.fit_transform(A)
+    
 elif args.mode == 'lse':
-    embedder = LaplacianSpectralEmbed(algorithm='full', form='DAD')
+    embedder = AdjacencySpectralEmbed(algorithm='full')
+    
+    D_left  = np.diag(np.sqrt(1/np.sum(A, axis=0)))
+    D_right = np.diag(np.sqrt(1/np.sum(A, axis=1)))
+    X_hat   = embedder.fit_transform(D_left @ A @ D_right)
 
-X_hat = embedder.fit_transform(A)
 X_hat = np.column_stack(X_hat)
 
 # --

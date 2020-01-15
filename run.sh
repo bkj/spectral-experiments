@@ -52,7 +52,9 @@ python jhu_vn_maggot.py --mode ase
 # f1.std [0.04481212 0.01754654 0.19963374 0.20195913]
 
 python jhu_vn_maggot.py --mode lse
-# ... failing ...
+# f1.mean [0.81673811 0.79135892 0.29380187 0.75851432]
+# f1.std [0.06263664 0.14081764 0.19825613 0.18505287]
+
 
 # --
 # Desikan
@@ -63,6 +65,7 @@ python prep_desikan.py
 # run PPNP
 python ppnp_desikan.py \
     --ppr-outpath ./data/DS72784/subj1-scan1.ppr_array.npy
+# {'acc': 0.563650223238593, 'f1_macro': 0.5203338970280309, 'f1_micro': 0.563650223238593}
 
 # run ASE
 python jhu_vn_desikan.py
