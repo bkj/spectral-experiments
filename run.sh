@@ -69,3 +69,4 @@ python ppnp_desikan.py \
 
 # run ASE
 python jhu_vn_desikan.py
+# {'acc': 0.4854350430142655, 'f1_macro': 0.4300804126303814, 'f1_micro': 0.4854350430142655}
