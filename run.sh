@@ -44,7 +44,7 @@ rm DS72784-graphml-raw.zip
 
 
 # --
-# Run JHU on maggot
+# Maggot
 
 python jhu_vn_maggot.py --mode ase
 # mode=ase
@@ -55,6 +55,7 @@ python jhu_vn_maggot.py --mode lse
 # f1.mean [0.81673811 0.79135892 0.29380187 0.75851432]
 # f1.std [0.06263664 0.14081764 0.19825613 0.18505287]
 
+# ppnp -- skipping for right now.
 
 # --
 # Desikan
