@@ -4,7 +4,6 @@
     jhu_vn_desikan.py
 """
 
-import json
 import argparse
 import numpy as np
 import pandas as pd
@@ -17,7 +16,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import normalize
 
 from graspy.utils import pass_to_ranks
-from graspy.embed import AdjacencySpectralEmbed as ASE
+from graspy.embed import AdjacencySpectralEmbed
 
 # --
 # Helpers
@@ -37,7 +36,7 @@ def load_csr(path):
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--graph-inpath',  type=str, default='data/DS72784/subj1-scan1.graphml')
+    parser.add_argument('--graph-inpath',  type=str, default='./data/DS72784/subj1-scan1.graphml')
     parser.add_argument('--label-inpath',  type=str, default='./data/DS72784/DS72784_desikan.csv')
     parser.add_argument('--p-train',       type=float, default=0.1)
     # parser.add_argument('--n-iters',       type=int,   default=32)
@@ -66,7 +65,7 @@ A     = nx.to_numpy_array(G)
 A_ptr = pass_to_ranks(A, method='simple-nonzero')
 save_csr('data/DS72784/subj1-scan1.A_ptr.npy', A_ptr)
 
-X_hat  = ASE().fit_transform(A_ptr)
+X_hat  = AdjacencySpectralEmbed().fit_transform(A_ptr)
 nX_hat = normalize(X_hat, axis=1, norm='l2')
 
 # --

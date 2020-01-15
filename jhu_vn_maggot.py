@@ -14,7 +14,7 @@ from sklearn.ensemble import BaggingClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import train_test_split
 
-from graspy.embed import AdjacencySpectralEmbed as ASE
+from graspy.embed import AdjacencySpectralEmbed
 
 # --
 # Helpers
@@ -60,7 +60,7 @@ y = np.array(y)
 # Fit ASE
 
 A     = nx.to_numpy_array(G)
-X_hat = ASE(algorithm='full').fit_transform(A)
+X_hat = AdjacencySpectralEmbed(algorithm='full').fit_transform(A)
 X_hat = np.column_stack(X_hat)
 
 # --
