@@ -4,8 +4,17 @@
     helpers.py
 """
 
+import random
 import numpy as np
 import scipy.sparse as sp
+
+import torch
+
+def set_seeds(seed):
+    _ = random.seed(seed + 1)
+    _ = np.random.seed(seed + 2)
+    _ = torch.manual_seed(seed + 3)
+    _ = torch.cuda.manual_seed(seed + 4)
 
 def save_csr(path, x):
     row, col = np.where(x)
@@ -33,3 +42,5 @@ def train_stop_valid_split(n, p, random_state=None):
     
     return idx_train, idx_stop, idx_valid
 
+def to_numpy(x):
+    return x.detach().cpu().numpy()

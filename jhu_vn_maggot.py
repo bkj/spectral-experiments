@@ -14,7 +14,7 @@ from sklearn.ensemble import BaggingClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import train_test_split
 
-from graspy.embed import AdjacencySpectralEmbed
+from graspy.embed import AdjacencySpectralEmbed, LaplacianSpectralEmbed
 
 # --
 # Helpers
@@ -43,6 +43,7 @@ def parse_args():
     parser.add_argument('--inpath',  type=str,   default='data/maggot/mb_2019-09-23/G.graphml')
     parser.add_argument('--p-train', type=float, default=0.1)
     parser.add_argument('--n-iters', type=int,   default=32)
+    parser.add_argument('--mode',    type=str,   default='ase', choices=['ase', 'lse'])
     parser.add_argument('--seed',    type=int,   default=123)
     return parser.parse_args()
 
@@ -59,8 +60,14 @@ y = np.array(y)
 # --
 # Fit ASE
 
-A     = nx.to_numpy_array(G)
-X_hat = AdjacencySpectralEmbed(algorithm='full').fit_transform(A)
+A = nx.to_numpy_array(G)
+
+if args.mode == 'ase':
+    embedder = AdjacencySpectralEmbed(algorithm='full')
+elif args.mode == 'lse':
+    embedder = LaplacianSpectralEmbed(algorithm='full', form='DAD')
+
+X_hat = embedder.fit_transform(A)
 X_hat = np.column_stack(X_hat)
 
 # --
@@ -84,6 +91,6 @@ for label_idx, label in enumerate(tqdm(ulabels)):
         
         scores[label_idx,iter_idx] = metrics.f1_score(y_test, y_hat, average='binary')
 
-
+print(f'mode={args.mode}')
 print('f1.mean', scores.mean(axis=-1))
 print('f1.std', scores.std(axis=-1))

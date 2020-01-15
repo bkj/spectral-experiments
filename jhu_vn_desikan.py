@@ -18,22 +18,22 @@ from sklearn.ensemble import RandomForestClassifier
 from graspy.utils import pass_to_ranks
 from graspy.embed import AdjacencySpectralEmbed
 
-from helpers import save_csr, train_stop_valid_split
+from helpers import set_seeds, save_csr, train_stop_valid_split
 
 # --
 # CLI
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--graph-inpath',  type=str, default='./data/DS72784/subj1-scan1.graphml')
-    parser.add_argument('--label-inpath',  type=str, default='./data/DS72784/DS72784_desikan.csv')
+    parser.add_argument('--graph-inpath',  type=str,   default='./data/DS72784/subj1-scan1.graphml')
+    parser.add_argument('--label-inpath',  type=str,   default='./data/DS72784/DS72784_desikan.csv')
     parser.add_argument('--p-train',       type=float, default=0.1)
     parser.add_argument('--seed',          type=int,   default=123)
     return parser.parse_args()
 
 
 args = parse_args()
-np.random.seed(args.seed)
+set_seeds(args.seed)
 
 # --
 # IO

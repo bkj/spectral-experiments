@@ -8,6 +8,7 @@
 conda create -y -n se_env python=3.7
 conda activate se_env
 
+conda install -y -c pytorch pytorch cudatoolkit=10.0
 conda install -y scikit-learn
 
 pip install tqdm
@@ -43,4 +44,10 @@ rm DS72784-graphml-raw.zip
 # --
 # Run JHU on maggot
 
-python jhu_vn_maggot.py
+python jhu_vn_maggot.py --mode ase
+# mode=ase
+# f1.mean [0.86123523 0.94151383 0.28093112 0.54028885]
+# f1.std [0.04481212 0.01754654 0.19963374 0.20195913]
+
+python jhu_vn_maggot.py --mode lse
+# ... failing ...
