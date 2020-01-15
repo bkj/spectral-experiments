@@ -112,7 +112,6 @@ y_train, y_valid   = y[idx_train], y[idx_valid]
 
 # --
 # Train model
-# !! TODO -- Should tune model
 
 clf = RandomForestClassifier(n_estimators=512, n_jobs=10)
 clf = clf.fit(nX_train, y_train)

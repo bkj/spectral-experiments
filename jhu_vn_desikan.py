@@ -4,6 +4,7 @@
     jhu_vn_desikan.py
 """
 
+import sys
 import argparse
 import numpy as np
 import pandas as pd
@@ -15,7 +16,6 @@ from sklearn.preprocessing import normalize
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 
-from graspy.utils import pass_to_ranks
 from graspy.embed import AdjacencySpectralEmbed
 
 from helpers import set_seeds, load_csr
@@ -38,6 +38,8 @@ set_seeds(args.seed)
 # --
 # IO
 
+print('jhu_vn_desikan.py: loading', file=sys.stderr)
+
 A_ptr = load_csr(args.graph_inpath).toarray()
 y     = np.load(args.label_inpath)
 
@@ -45,6 +47,8 @@ n_nodes = A_ptr.shape[0]
 
 # --
 # Compute ASE
+
+print('jhu_vn_desikan.py: compute ASE', file=sys.stderr)
 
 X_hat  = AdjacencySpectralEmbed().fit_transform(A_ptr)
 nX_hat = normalize(X_hat, axis=1, norm='l2')
@@ -59,7 +63,8 @@ y_train, y_valid   = y[idx_train], y[idx_valid]
 
 # --
 # Train model
-# !! TODO -- Should tune model
+
+print('jhu_vn_desikan.py: train RandomForestClassifier', file=sys.stderr)
 
 clf = RandomForestClassifier(n_estimators=512, n_jobs=10)
 clf = clf.fit(nX_train, y_train)
