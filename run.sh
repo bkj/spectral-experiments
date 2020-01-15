@@ -16,8 +16,12 @@ pip install networkx
 pip install git+https://github.com/bkj/rsub
 
 # --
-# Get data
+# Download data
 
+# maggot
+# ... download from https://github.com/neurodata/maggot_models/tree/master/data/processed/mb_2019-09-23 ...
+
+# DS72784
 mkdir -p data/DS72784
 
 wget http://www.cis.jhu.edu/~parky/TT/Data/DS72784/Labels.zip \
@@ -37,6 +41,6 @@ rm DS72784-graphml-raw.zip
 
 
 # --
-# Run JHU
+# Run JHU on maggot
 
-python jhu_vn.py
+python jhu_vn_maggot.py
