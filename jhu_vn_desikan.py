@@ -18,7 +18,7 @@ from sklearn.ensemble import RandomForestClassifier
 from graspy.utils import pass_to_ranks
 from graspy.embed import AdjacencySpectralEmbed
 
-from helpers import set_seeds, save_csr, train_stop_valid_split
+from helpers import set_seeds, load_csr
 
 # --
 # CLI
@@ -38,7 +38,7 @@ set_seeds(args.seed)
 # --
 # IO
 
-A_ptr = load_csr(args.graph_inpath)
+A_ptr = load_csr(args.graph_inpath).toarray()
 y     = np.load(args.label_inpath)
 
 # --

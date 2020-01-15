@@ -67,7 +67,9 @@ A_ptr  = pass_to_ranks(A, method='simple-nonzero')
 # --
 # Save
 
-print(f'prep_desikan.py: saving', file=sys.stderr)
+print(f'prep_desikan.py: saving to {args.graph_outpath}', file=sys.stderr)
 save_csr(args.graph_outpath, A_ptr)
+
+print(f'prep_desikan.py: saving to {args.label_outpath}', file=sys.stderr)
 np.save(args.label_outpath, y)
 

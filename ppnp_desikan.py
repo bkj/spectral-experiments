@@ -4,6 +4,7 @@
     ppr_desikan.py
 """
 
+import sys
 import argparse
 import numpy as np
 from time import time
@@ -74,6 +75,8 @@ if args.ppr_inpath is None:
     np.fill_diagonal(ppr_array, 0)
     np.save(args.ppr_outpath, ppr_array)
 else:
+    print(f'ppnp_desikan.py: loading PPNP from {args.ppr_inpath}', file=sys.stderr)
+    
     ppr_array = np.load(args.ppr_inpath)
 
 # --

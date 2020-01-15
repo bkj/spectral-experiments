@@ -16,6 +16,8 @@ pip install graspy
 pip install networkx
 pip install git+https://github.com/bkj/rsub
 
+pip install git@https://github.com/bkj/ez_ppnp.git
+
 # --
 # Download data
 
@@ -63,3 +65,4 @@ python ppnp_desikan.py \
     --ppr-outpath ./data/DS72784/subj1-scan1.ppr_array.npy
 
 # run ASE
+python jhu_vn_desikan.py
