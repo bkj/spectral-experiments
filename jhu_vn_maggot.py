@@ -70,6 +70,14 @@ X_hat = np.column_stack(X_hat)
 
 # >>
 
+from sklearn.svm import LinearSVC
+
+X_train, X_test, y_train, y_test = \
+    train_test_split(X_hat, coarse_labels, train_size=prop_training, stratify=coarse_labels)
+
+pred_test = LinearSVC().fit(X_train, y_train).predict(X_test)
+metrics.f1_score(y_test, pred_test, average='macro')
+
 # <<
 
 # --
