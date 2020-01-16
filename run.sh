@@ -78,7 +78,7 @@ python jhu_vn_desikan.py --seed 111
 # Generic
 
 python generic.py --inpath data/cora/cora | jq .
-python generic.py --inpath data/citeseer/citeseer | jq .
+python generic.py --inpath data/citeseer/citeseer --hidden-dim 32 | jq .
 python generic.py --inpath data/pubmed/pubmed | jq .
 
 

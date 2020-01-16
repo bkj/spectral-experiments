@@ -77,14 +77,17 @@ if args.active_permute:
 # --
 # Fit embeddings
 
+# n_components = args.hidden_dim # fix ase/lse dimension
+n_components = None              # automatic selection
+
 print('embed_ppnp', file=sys.stderr)
 X_ppnp = embed_ppnp(adj, args.ppr_alpha, args.hidden_dim, args.lr, args.epochs, args.batch_size)
 
 print('embed_ase', file=sys.stderr)
-X_ase  = embed_ase(adj)
+X_ase  = embed_ase(adj, n_components=n_components)
 
 print('embed_lse', file=sys.stderr)
-X_lse  = embed_lse(adj)
+X_lse  = embed_lse(adj, n_components=n_components)
 
 if not args.no_normalize_features:
     X_ppnp = normalize(X_ppnp, axis=1, norm='l2')
@@ -123,6 +126,10 @@ print(json.dumps({
         "dataset" : str(args.inpath),
         "n_nodes" : int(n_nodes),
         "n_edges" : int(n_edges),
+        
+        "ppnp_dim" : X_ppnp.shape[1],
+        "ase_dim"  : X_ase.shape[1],
+        "lse_dim"  : X_lse.shape[1],
     },
     "ppnp_scores" : ppnp_scores,
     "ase_scores"  : ase_scores,

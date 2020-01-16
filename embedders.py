@@ -50,16 +50,22 @@ def embed_ppnp(adj, ppr_alpha, hidden_dim, lr, epochs, batch_size):
     return X_hat
 
 
-def embed_ase(adj):
-    X_ase  = AdjacencySpectralEmbed().fit_transform(adj.toarray())
+def embed_ase(adj, n_components=None):
+    if n_components is not None:
+        print(n_components)
+    
+    X_ase = AdjacencySpectralEmbed(n_components=n_components).fit_transform(adj.toarray())
     if isinstance(X_ase, tuple):
         X_ase = np.column_stack(X_ase)
     
     return X_ase
 
 
-def embed_lse(adj):
-    X_lse  = LaplacianSpectralEmbed().fit_transform(adj.toarray())
+def embed_lse(adj, n_components=None):
+    if n_components is not None:
+        print(n_components)
+    
+    X_lse = LaplacianSpectralEmbed(n_components=n_components).fit_transform(adj.toarray())
     if isinstance(X_lse, tuple):
         X_lse = np.column_stack(X_lse)
     
