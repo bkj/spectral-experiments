@@ -4,6 +4,7 @@
     embedders.py
 """
 
+import sys
 import numpy as np
 
 import torch
@@ -14,7 +15,7 @@ from ez_ppnp.models import EmbeddingPPNP
 from ez_ppnp.trainer import train_unsupervised
 from ez_ppnp.ppr import exact_ppr, exact_ppr_joblib, PrecomputedPPR
 
-from graspy.embed import AdjacencySpectralEmbed
+from graspy.embed import AdjacencySpectralEmbed, LaplacianSpectralEmbed
 
 from helpers import to_numpy
 
@@ -48,9 +49,19 @@ def embed_ppnp(adj, ppr_alpha, hidden_dim, lr, epochs, batch_size):
     
     return X_hat
 
+
 def embed_ase(adj):
     X_ase  = AdjacencySpectralEmbed().fit_transform(adj.toarray())
     if isinstance(X_ase, tuple):
         X_ase = np.column_stack(X_ase)
     
     return X_ase
+
+
+def embed_lse(adj):
+    X_lse  = LaplacianSpectralEmbed().fit_transform(adj.toarray())
+    if isinstance(X_lse, tuple):
+        X_lse = np.column_stack(X_lse)
+    
+    return X_lse
+

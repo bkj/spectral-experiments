@@ -75,43 +75,12 @@ python jhu_vn_desikan.py --seed 111
 # {'acc': 0.4854350430142655, 'f1_macro': 0.4300804126303814, 'f1_micro': 0.4854350430142655}
 
 # --
-# CORA
-
-python ase_generic.py --inpath data/cora/cora
-# {'method': 'ase', 'acc': 0.5085013839462238, 'f1_macro': 0.45474561716262213, 'f1_micro': 0.5085013839462238}
-python ppnp_generic.py --inpath data/cora/cora
-# {'method': 'ppnp', 'acc': 0.7900355871886121, 'f1_macro': 0.7483827681960851, 'f1_micro': 0.7900355871886121}
-
-python ase_generic.py --inpath data/citeseer/citeseer
-# {'method': 'ase', 'acc': 0.47972617166929965, 'f1_macro': 0.37950913292634175, 'f1_micro': 0.47972617166929965}
-python ppnp_generic.py --inpath data/citeseer/citeseer
-# {'method': 'ppnp', 'acc': 0.6924697209057399, 'f1_macro': 0.6259157269425071, 'f1_micro': 0.6924697209057399}
-
-python ase_generic.py --inpath data/pubmed/pubmed
-# {'method': 'ase', 'acc': 0.7556632480558999, 'f1_macro': 0.7321985772004179, 'f1_micro': 0.7556632480558999}
-python ppnp_generic.py --inpath data/pubmed/pubmed
-# {'method': 'ppnp', 'acc': 0.765242871633044, 'f1_macro': 0.7476222554914792, 'f1_micro': 0.765242871633044}
-
-
-# ..
+# Generic
 
 python generic.py --inpath data/cora/cora | jq .
-# {
-#   "dataset": "data/cora/cora",
-#   "n_nodes": 2810,
-#   "n_edges": 15962,
-#   "ppnp_scores": {
-#     "acc": 0.7900355871886121,
-#     "f1_macro": 0.7483827681960851,
-#     "f1_micro": 0.7900355871886121
-#   },
-#   "ase_scores": {
-#     "acc": 0.7346777382364571,
-#     "f1_macro": 0.6918257994053247,
-#     "f1_micro": 0.7346777382364571
-#   }
-# }
-
 python generic.py --inpath data/citeseer/citeseer | jq .
+python generic.py --inpath data/pubmed/pubmed | jq .
+
+
 
 

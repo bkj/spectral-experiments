@@ -23,7 +23,7 @@ from torch.nn import functional as F
 
 from helpers import set_seeds, load_csr, to_numpy, get_lcc
 
-from embedders import embed_ppnp, embed_ase
+from embedders import embed_ppnp, embed_ase, embed_lse
 
 # --
 # CLI
@@ -42,7 +42,10 @@ def parse_args():
     parser.add_argument('--hidden-dim',    type=int,   default=8)
     parser.add_argument('--lr',            type=int,   default=0.01)
     
-    parser.add_argument('--seed',          type=int,   default=123)
+    parser.add_argument('--active-permute',        action="store_true")
+    parser.add_argument('--no-normalize-features', action="store_true")
+    
+    parser.add_argument('--seed', type=int, default=123)
     args = parser.parse_args()
     
     assert (args.ppr_inpath is None) or (args.ppr_outpath is None), 'cannot set ppr_inpath and ppr_outpath'
@@ -66,6 +69,11 @@ adj, y = get_lcc(adj, y)
 n_nodes = adj.shape[0]
 n_edges = adj.nnz
 
+if args.active_permute:
+    p   = np.random.permutation(n_nodes)
+    adj = adj[p][:,p]
+    y   = y[p]
+
 # --
 # Fit embeddings
 
@@ -75,8 +83,13 @@ X_ppnp = embed_ppnp(adj, args.ppr_alpha, args.hidden_dim, args.lr, args.epochs, 
 print('embed_ase', file=sys.stderr)
 X_ase  = embed_ase(adj)
 
-X_ppnp = normalize(X_ppnp, axis=1, norm='l2')
-X_ase  = normalize(X_ase, axis=1, norm='l2')
+print('embed_lse', file=sys.stderr)
+X_lse  = embed_lse(adj)
+
+if not args.no_normalize_features:
+    X_ppnp = normalize(X_ppnp, axis=1, norm='l2')
+    X_ase  = normalize(X_ase, axis=1, norm='l2')
+    X_lse  = normalize(X_lse, axis=1, norm='l2')
 
 # --
 # Train/test split
@@ -85,6 +98,7 @@ idx_train, idx_valid = train_test_split(np.arange(n_nodes), train_size=args.p_tr
 
 X_ppnp_train, X_ppnp_valid = X_ppnp[idx_train], X_ppnp[idx_valid]
 X_ase_train, X_ase_valid   = X_ase[idx_train], X_ase[idx_valid]
+X_lse_train, X_lse_valid   = X_lse[idx_train], X_lse[idx_valid]
 y_train, y_valid           = y[idx_train], y[idx_valid]
 
 # --
@@ -95,18 +109,22 @@ def do_score(X_train, y_train, X_valid):
     clf = clf.fit(X_train, y_train)
     pred_valid = clf.predict(X_valid)
     return  {
-        "acc"      : float(metrics.accuracy_score(y_valid, pred_valid)),
+        "accuracy" : float(metrics.accuracy_score(y_valid, pred_valid)),
         "f1_macro" : float(metrics.f1_score(y_valid, pred_valid, average='macro')),
         "f1_micro" : float(metrics.f1_score(y_valid, pred_valid, average='micro')),
     }
 
 ppnp_scores = do_score(X_ppnp_train, y_train, X_ppnp_valid)
 ase_scores  = do_score(X_ase_train, y_train, X_ase_valid)
+lse_scores  = do_score(X_lse_train, y_train, X_lse_valid)
 
 print(json.dumps({
-    "dataset"     : args.inpath,
-    "n_nodes"     : n_nodes,
-    "n_edges"     : n_edges,
+    "_metadata" : {
+        "dataset" : str(args.inpath),
+        "n_nodes" : int(n_nodes),
+        "n_edges" : int(n_edges),
+    },
     "ppnp_scores" : ppnp_scores,
     "ase_scores"  : ase_scores,
+    "lse_scores"  : lse_scores,
 }))
