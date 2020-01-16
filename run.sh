@@ -65,9 +65,10 @@ python prep_desikan.py
 
 # run PPNP
 python ppnp_desikan.py \
-    --ppr-outpath ./data/DS72784/subj1-scan1.ppr_array.npy
+    --ppr-outpath ./data/DS72784/subj1-scan1.ppr_array.npy --seed 111
 # {'acc': 0.563650223238593, 'f1_macro': 0.5203338970280309, 'f1_micro': 0.563650223238593}
+# {'acc': 0.5648753130785147, 'f1_macro': 0.5214242188524029, 'f1_micro': 0.5648753130785147}
 
 # run ASE
-python jhu_vn_desikan.py
+python jhu_vn_desikan.py --seed 111
 # {'acc': 0.4854350430142655, 'f1_macro': 0.4300804126303814, 'f1_micro': 0.4854350430142655}
