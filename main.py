@@ -39,13 +39,8 @@ def parse_args():
     parser.add_argument('--no-normalize-features', action="store_true")
     
     parser.add_argument('--seed', type=int, default=123)
-    args = parser.parse_args()
-    
-    assert (args.ppr_inpath is None) or (args.ppr_outpath is None), 'cannot set ppr_inpath and ppr_outpath'
-    if args.ppr_inpath is None:
-        assert args.ppr_outpath is not None, 'if no ppr_inpath, must set ppr_outpath to cache ppr matrix'
-    
-    return args
+    return parser.parse_args()
+
 
 args = parse_args()
 set_seeds(args.seed)

@@ -1,5 +1,9 @@
 # spectral-experiments
 
-## Usage/Installation
+## Installation
+
+See `./install.sh`
+
+## Usage
 
 See `./run.sh`
