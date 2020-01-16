@@ -5,10 +5,12 @@
 """
 
 import sys
+import json
 import argparse
 import numpy as np
 from time import time
 from tqdm import trange
+from scipy.sparse import csgraph
 
 from sklearn import metrics
 from sklearn.preprocessing import normalize
@@ -19,10 +21,10 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from helpers import set_seeds, load_csr, to_numpy
+from helpers import set_seeds, load_csr, to_numpy, get_lcc
 
 from ez_ppnp.models import EmbeddingPPNP
-from ez_ppnp.ppr import exact_ppr_joblib, PrecomputedPPR
+from ez_ppnp.ppr import exact_ppr, exact_ppr_joblib, PrecomputedPPR
 from ez_ppnp.trainer import train_unsupervised
 
 # --
@@ -30,14 +32,14 @@ from ez_ppnp.trainer import train_unsupervised
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--graph-inpath',  type=str,   default='./data/DS72784/subj1-scan1.A_ptr.npy')
-    parser.add_argument('--label-inpath',  type=str,   default='./data/DS72784/subj1-scan1.y.npy')
+    parser.add_argument('--inpath',  type=str,   default='./data/cora/cora')
+    
     parser.add_argument('--ppr-inpath',    type=str)
-    parser.add_argument('--ppr-outpath',   type=str)
+    parser.add_argument('--ppr-outpath',   type=str,   default='delete-me')
     parser.add_argument('--p-train',       type=float, default=0.1)
     
     parser.add_argument('--ppr-alpha',     type=float, default=0.1)
-    parser.add_argument('--epochs',        type=int,   default=1000)
+    parser.add_argument('--epochs',        type=int,   default=500)
     parser.add_argument('--batch-size',    type=int,   default=2048)
     parser.add_argument('--hidden-dim',    type=int,   default=8)
     parser.add_argument('--lr',            type=int,   default=0.01)
@@ -57,21 +59,28 @@ set_seeds(args.seed)
 # --
 # IO
 
-# ... could read from scratch, but save time by 
-# reading from `pass_to_ranks` preprocessed version
+adj = load_csr(args.inpath + '.adj.npy', square=True)
+adj = ((adj + adj.T) > 0).astype(np.float32)
+y   = np.load(args.inpath + '.y.npy')
 
-adj = load_csr(args.graph_inpath)
-y   = np.load(args.label_inpath)
+adj, y = get_lcc(adj, y)
 
 n_nodes = adj.shape[0]
+n_edges = adj.nnz
+print(json.dumps({
+    "n_nodes" : n_nodes,
+    "n_edges" : n_edges,
+}), file=sys.stderr)
 
 # --
 # Precompute PPR
 
+args.ppr_inpath = None
 if args.ppr_inpath is None:
     print(f'ppnp_desikan.py: computing PPNP, caching to {args.ppr_outpath}', file=sys.stderr)
     
-    ppr_array = exact_ppr_joblib(adj, alpha=args.ppr_alpha)
+    ppr_fn    = exact_ppr_joblib if n_nodes > 5000 else exact_ppr
+    ppr_array = ppr_fn(adj, alpha=args.ppr_alpha)
     np.fill_diagonal(ppr_array, 0)
     np.save(args.ppr_outpath, ppr_array)
 else:
@@ -118,8 +127,9 @@ clf = clf.fit(nX_train, y_train)
 
 pred_valid = clf.predict(nX_valid)
 
-print({
-    "acc"      : metrics.accuracy_score(y_valid, pred_valid),
-    "f1_macro" : metrics.f1_score(y_valid, pred_valid, average='macro'),
-    "f1_micro" : metrics.f1_score(y_valid, pred_valid, average='micro'),
-})
+print(json.dumps({
+    "method"   : "ppnp",
+    "acc"      : float(metrics.accuracy_score(y_valid, pred_valid)),
+    "f1_macro" : float(metrics.f1_score(y_valid, pred_valid, average='macro')),
+    "f1_micro" : float(metrics.f1_score(y_valid, pred_valid, average='micro')),
+}))

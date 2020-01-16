@@ -17,14 +17,31 @@ def set_seeds(seed):
     _ = torch.cuda.manual_seed(seed + 4)
 
 def save_csr(path, x):
-    row, col = np.where(x)
-    val      = x[(row, col)]
+    if isinstance(x, np.ndarray):
+        row, col = np.where(x)
+        val      = x[(row, col)]
+    elif isinstance(x, sp.csr_matrix):
+        x_coo = x.tocoo()
+        row, col, val = x_coo.row, x_coo.col, x_coo.data
+    else:
+        raise Exception()
+    
+    row = row.astype(np.float64)
+    col = col.astype(np.float64)
+    val = val.astype(np.float64)
+    
     np.save(path, np.column_stack([row, col, val]))
 
-def load_csr(path):
+def load_csr(path, square=False):
     row, col, val = np.load(path).T
     row, col = row.astype(np.int), col.astype(np.int)
-    return sp.csr_matrix((val, (row, col)))
+    
+    nrow = row.max() + 1
+    ncol = col.max() + 1
+    if square:
+        nrow = ncol = max(nrow, ncol)
+    
+    return sp.csr_matrix((val, (row, col)), shape=(nrow, ncol))
 
 def train_stop_valid_split(n, p, random_state=None):
     assert len(p) == 3
@@ -44,3 +61,8 @@ def train_stop_valid_split(n, p, random_state=None):
 
 def to_numpy(x):
     return x.detach().cpu().numpy()
+
+def get_lcc(adj, y):
+    _, comps = sp.csgraph.connected_components(adj)
+    sel = comps == 0
+    return adj[sel][:,sel], y[sel]

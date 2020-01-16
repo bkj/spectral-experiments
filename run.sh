@@ -65,10 +65,53 @@ python prep_desikan.py
 
 # run PPNP
 python ppnp_desikan.py \
-    --ppr-outpath ./data/DS72784/subj1-scan1.ppr_array.npy --seed 111
-# {'acc': 0.563650223238593, 'f1_macro': 0.5203338970280309, 'f1_micro': 0.563650223238593}
-# {'acc': 0.5648753130785147, 'f1_macro': 0.5214242188524029, 'f1_micro': 0.5648753130785147}
+    --ppr-alpha 0.1    \
+    --ppr-outpath ./data/DS72784/subj1-scan1.ppr_array0.1.npy
+
+# {'acc': 0.5895132309702712, 'f1_macro': 0.5445337921270678, 'f1_micro': 0.5895132309702712}
 
 # run ASE
 python jhu_vn_desikan.py --seed 111
 # {'acc': 0.4854350430142655, 'f1_macro': 0.4300804126303814, 'f1_micro': 0.4854350430142655}
+
+# --
+# CORA
+
+python ase_generic.py --inpath data/cora/cora
+# {'method': 'ase', 'acc': 0.5085013839462238, 'f1_macro': 0.45474561716262213, 'f1_micro': 0.5085013839462238}
+python ppnp_generic.py --inpath data/cora/cora
+# {'method': 'ppnp', 'acc': 0.7900355871886121, 'f1_macro': 0.7483827681960851, 'f1_micro': 0.7900355871886121}
+
+python ase_generic.py --inpath data/citeseer/citeseer
+# {'method': 'ase', 'acc': 0.47972617166929965, 'f1_macro': 0.37950913292634175, 'f1_micro': 0.47972617166929965}
+python ppnp_generic.py --inpath data/citeseer/citeseer
+# {'method': 'ppnp', 'acc': 0.6924697209057399, 'f1_macro': 0.6259157269425071, 'f1_micro': 0.6924697209057399}
+
+python ase_generic.py --inpath data/pubmed/pubmed
+# {'method': 'ase', 'acc': 0.7556632480558999, 'f1_macro': 0.7321985772004179, 'f1_micro': 0.7556632480558999}
+python ppnp_generic.py --inpath data/pubmed/pubmed
+# {'method': 'ppnp', 'acc': 0.765242871633044, 'f1_macro': 0.7476222554914792, 'f1_micro': 0.765242871633044}
+
+
+# ..
+
+python generic.py --inpath data/cora/cora | jq .
+# {
+#   "dataset": "data/cora/cora",
+#   "n_nodes": 2810,
+#   "n_edges": 15962,
+#   "ppnp_scores": {
+#     "acc": 0.7900355871886121,
+#     "f1_macro": 0.7483827681960851,
+#     "f1_micro": 0.7900355871886121
+#   },
+#   "ase_scores": {
+#     "acc": 0.7346777382364571,
+#     "f1_macro": 0.6918257994053247,
+#     "f1_micro": 0.7346777382364571
+#   }
+# }
+
+python generic.py --inpath data/citeseer/citeseer | jq .
+
+
