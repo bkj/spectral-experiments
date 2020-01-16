@@ -4,18 +4,17 @@
     embedders.py
 """
 
-import sys
 import numpy as np
 
 import torch
 from torch import nn
 from torch.nn import functional as F
 
+from graspy.embed import AdjacencySpectralEmbed, LaplacianSpectralEmbed
+
 from ez_ppnp.models import EmbeddingPPNP
 from ez_ppnp.trainer import train_unsupervised
 from ez_ppnp.ppr import exact_ppr, exact_ppr_joblib, PrecomputedPPR
-
-from graspy.embed import AdjacencySpectralEmbed, LaplacianSpectralEmbed
 
 from helpers import to_numpy
 

@@ -1,16 +1,13 @@
 #!/usr/bin/env python
 
 """
-    ppr_desikan.py
+    main.py
 """
 
 import sys
 import json
 import argparse
 import numpy as np
-from time import time
-from tqdm import trange
-from scipy.sparse import csgraph
 
 from sklearn import metrics
 from sklearn.preprocessing import normalize
@@ -22,7 +19,6 @@ from torch import nn
 from torch.nn import functional as F
 
 from helpers import set_seeds, load_csr, to_numpy, get_lcc
-
 from embedders import embed_ppnp, embed_ase, embed_lse
 
 # --
