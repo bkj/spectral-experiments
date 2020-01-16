@@ -30,11 +30,8 @@ from embedders import embed_ppnp, embed_ase, embed_lse
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--inpath',  type=str,   default='./data/cora/cora')
-    
-    parser.add_argument('--ppr-inpath',    type=str)
-    parser.add_argument('--ppr-outpath',   type=str,   default='delete-me')
-    parser.add_argument('--p-train',       type=float, default=0.1)
+    parser.add_argument('--inpath',  type=str,   default='./small_data/cora/cora')
+    parser.add_argument('--p-train', type=float, default=0.1)
     
     parser.add_argument('--ppr-alpha',     type=float, default=0.1)
     parser.add_argument('--epochs',        type=int,   default=500)
@@ -70,6 +67,7 @@ n_nodes = adj.shape[0]
 n_edges = adj.nnz
 
 if args.active_permute:
+    # !! (pro)actively permute data, in case order leaks information
     p   = np.random.permutation(n_nodes)
     adj = adj[p][:,p]
     y   = y[p]
