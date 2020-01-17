@@ -31,11 +31,17 @@ def parse_args():
     parser.add_argument('--p-train', type=float, default=0.1)
     
     parser.add_argument('--ppr-alpha',     type=float, default=0.1)
+    
+    # ppnp
     parser.add_argument('--epochs',        type=int,   default=500)
     parser.add_argument('--batch-size',    type=int,   default=2048)
     parser.add_argument('--hidden-dim',    type=int,   default=8)
     parser.add_argument('--lr',            type=int,   default=0.01)
     
+    # ppr_svd
+    parser.add_argument('--pprsvd-topk',   type=int,   default=128)
+    
+    # ase/lse
     parser.add_argument('--se-components', type=int,   default=None)
     
     parser.add_argument('--active-permute',        action="store_true")
@@ -79,7 +85,7 @@ X_hats = {}
 emb_fns = {
     # "ppnp" : partial(embed_ppnp, ppr_alpha=args.ppr_alpha, hidden_dim=args.hidden_dim, lr=args.lr, epochs=args.epochs, batch_size=args.batch_size)
     "ppr_full"   : partial(embed_ppr_svd, ppr_alpha=args.ppr_alpha, n_components=args.hidden_dim),
-    "ppr_sparse" : partial(embed_ppr_svd, ppr_alpha=args.ppr_alpha, n_components=args.hidden_dim, topk=128),
+    "ppr_sparse" : partial(embed_ppr_svd, ppr_alpha=args.ppr_alpha, n_components=args.hidden_dim, topk=args.pprsvd_topk),
     "ase"        : partial(embed_ase, n_components=args.se_components),
     "lsa"        : partial(embed_lse, n_components=args.se_components),
 }
