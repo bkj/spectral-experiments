@@ -88,8 +88,8 @@ for k, fn in emb_fns.items():
     print(f'main: embedding {k}', file=sys.stderr)
     
     X_hat = fn(adj)
-    if not args.no_normalize_features:
-        X_hat = normalize(X_hat, axis=1, norm='l2')
+    # if not args.no_normalize_features:
+    #     X_hat = normalize(X_hat, axis=1, norm='l2')
     
     X_hats[k] = X_hat
 
