@@ -45,7 +45,9 @@ def parse_args():
     # ase/lse
     parser.add_argument('--se-components', type=int,   default=None)
     
-    parser.add_argument('--no-normalize-features', action="store_true")
+    parser.add_argument('--no-lcc', action="store_true")
+    parser.add_argument('--no-sym', action="store_true")
+    parser.add_argument('--no-bin', action="store_true")
     
     parser.add_argument('--seed', type=int, default=123)
     args = parser.parse_args()
@@ -53,27 +55,29 @@ def parse_args():
     if args.se_components is not None:
         assert args.se_components == args.hidden_dim
     
+    args.lcc = not args.no_lcc
+    args.sym = not args.no_sym
+    args.bin = not args.no_bin
+    
     return args
 
 args = parse_args()
 set_seeds(args.seed)
 
-# # >>
-# print('manual testing')
-# args.inpath        = './data/DS72784/subj1-scan1'
-# args.se_components = 8
-# # <<
-
 # --
 # IO
 
 adj = load_csr(args.inpath + '.adj.npy', square=True)
-
-adj = ((adj + adj.T) > 0).astype(np.float32) # symmetrize + binarize
-
 y   = np.load(args.inpath + '.y.npy')
 
-adj, y = get_lcc(adj, y)
+if args.sym: 
+    adj = adj.maximum(adj.T)
+
+if args.bin:
+    adj = (adj > 0).astype(np.float32)
+
+if args.lcc:
+    adj, y = get_lcc(adj, y)
 
 n_nodes = adj.shape[0]
 n_edges = adj.nnz
