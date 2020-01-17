@@ -86,12 +86,7 @@ emb_fns = {
 
 for k, fn in emb_fns.items():
     print(f'main: embedding {k}', file=sys.stderr)
-    
-    X_hat = fn(adj)
-    # if not args.no_normalize_features:
-    #     X_hat = normalize(X_hat, axis=1, norm='l2')
-    
-    X_hats[k] = X_hat
+    X_hats[k] = fn(adj)
 
 # --
 # Train/test split
@@ -103,9 +98,13 @@ y_train, y_valid     = y[idx_train], y[idx_valid]
 # Train model
 
 def do_score(X_train, y_train, X_valid):
+    nX_train = normalize(X_train, axis=1, norm='l2')
+    nX_valid = normalize(X_valid, axis=1, norm='l2')
+    
     clf = RandomForestClassifier(n_estimators=512, n_jobs=10)
-    clf = clf.fit(X_train, y_train)
-    pred_valid = clf.predict(X_valid)
+    clf = clf.fit(nX_train, y_train)
+    
+    pred_valid = clf.predict(nX_valid)
     return  {
         "accuracy" : float(metrics.accuracy_score(y_valid, pred_valid)),
         "f1_macro" : float(metrics.f1_score(y_valid, pred_valid, average='macro')),
@@ -115,9 +114,7 @@ def do_score(X_train, y_train, X_valid):
 scores = {}
 for k, X_hat in X_hats.items():
     print(f'main: modeling {k}', file=sys.stderr)
-    
-    X_hat_train, X_hat_valid = X_hat[idx_train], X_hat[idx_valid]
-    scores[k] = do_score(X_hat_train, y_train, X_hat_valid)
+    scores[k] = do_score(X_train=X_hat[idx_train], y_train=y_train, X_valid=X_hat[idx_valid])
 
 # --
 # Log
