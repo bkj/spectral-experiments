@@ -49,11 +49,15 @@ def embed_ppnp(adj, ppr_alpha, hidden_dim, lr, epochs, batch_size):
     
     return X_hat
 
-def embed_ppr_svd(adj, ppr_alpha, n_components):
+def embed_ppr_svd(adj, ppr_alpha, n_components, topk=None):
     n_nodes = adj.shape[0]
     
     ppr_fn    = exact_ppr_joblib if n_nodes > 5000 else exact_ppr
     ppr_array = ppr_fn(adj, alpha=ppr_alpha)
+    
+    if topk is not None:
+        threshes = np.sort(ppr_array, axis=-1)[:,-topk]
+        ppr_array[ppr_array < threshes.reshape(-1, 1)] = 0
     
     u, _, _  = randomized_svd(ppr_array, n_components=n_components)
     return u

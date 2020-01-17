@@ -8,6 +8,7 @@ import sys
 import json
 import argparse
 import numpy as np
+from functools import partial
 
 from sklearn import metrics
 from sklearn.preprocessing import normalize
@@ -73,34 +74,30 @@ if args.active_permute:
 # --
 # Fit embeddings
 
-print('embed_ppnp', file=sys.stderr)
-X_ppnp = embed_ppnp(adj, args.ppr_alpha, args.hidden_dim, args.lr, args.epochs, args.batch_size)
+X_hats = {}
 
-print('embed_ppr', file=sys.stderr)
-X_ppr  = embed_ppr_svd(adj, ppr_alpha=args.ppr_alpha, n_components=args.hidden_dim)
+emb_fns = {
+    # "ppnp" : partial(embed_ppnp, ppr_alpha=args.ppr_alpha, hidden_dim=args.hidden_dim, lr=args.lr, epochs=args.epochs, batch_size=args.batch_size)
+    "ppr_full"   : partial(embed_ppr_svd, ppr_alpha=args.ppr_alpha, n_components=args.hidden_dim),
+    "ppr_sparse" : partial(embed_ppr_svd, ppr_alpha=args.ppr_alpha, n_components=args.hidden_dim, topk=128),
+    "ase"        : partial(embed_ase, n_components=args.se_components),
+    "lsa"        : partial(embed_lse, n_components=args.se_components),
+}
 
-print('embed_ase', file=sys.stderr)
-X_ase  = embed_ase(adj, n_components=args.se_components)
-
-print('embed_lse', file=sys.stderr)
-X_lse  = embed_lse(adj, n_components=args.se_components)
-
-if not args.no_normalize_features:
-    X_ppnp = normalize(X_ppnp, axis=1, norm='l2')
-    X_ppr  = normalize(X_ppr, axis=1, norm='l2')
-    X_ase  = normalize(X_ase, axis=1, norm='l2')
-    X_lse  = normalize(X_lse, axis=1, norm='l2')
+for k, fn in emb_fns.items():
+    print(f'main: embedding {k}', file=sys.stderr)
+    
+    X_hat = fn(adj)
+    if not args.no_normalize_features:
+        X_hat = normalize(X_hat, axis=1, norm='l2')
+    
+    X_hats[k] = X_hat
 
 # --
 # Train/test split
 
 idx_train, idx_valid = train_test_split(np.arange(n_nodes), train_size=args.p_train, test_size=1 - args.p_train)
-
-X_ppnp_train, X_ppnp_valid = X_ppnp[idx_train], X_ppnp[idx_valid]
-X_ppr_train, X_ppr_valid   = X_ppr[idx_train], X_ppr[idx_valid]
-X_ase_train, X_ase_valid   = X_ase[idx_train], X_ase[idx_valid]
-X_lse_train, X_lse_valid   = X_lse[idx_train], X_lse[idx_valid]
-y_train, y_valid           = y[idx_train], y[idx_valid]
+y_train, y_valid     = y[idx_train], y[idx_valid]
 
 # --
 # Train model
@@ -115,24 +112,21 @@ def do_score(X_train, y_train, X_valid):
         "f1_micro" : float(metrics.f1_score(y_valid, pred_valid, average='micro')),
     }
 
-ppnp_scores = do_score(X_ppnp_train, y_train, X_ppnp_valid)
-ppr_scores  = do_score(X_ppr_train, y_train, X_ppr_valid)
-ase_scores  = do_score(X_ase_train, y_train, X_ase_valid)
-lse_scores  = do_score(X_lse_train, y_train, X_lse_valid)
+scores = {}
+for k, X_hat in X_hats.items():
+    print(f'main: modeling {k}', file=sys.stderr)
+    
+    X_hat_train, X_hat_valid = X_hat[idx_train], X_hat[idx_valid]
+    scores[k] = do_score(X_hat_train, y_train, X_hat_valid)
+
+# --
+# Log
 
 print(json.dumps({
     "_metadata" : {
         "dataset" : str(args.inpath),
         "n_nodes" : int(n_nodes),
         "n_edges" : int(n_edges),
-        
-        "ppnp_dim" : X_ppnp.shape[1],
-        "ppr_dim"  : X_ppr.shape[1],
-        "ase_dim"  : X_ase.shape[1],
-        "lse_dim"  : X_lse.shape[1],
     },
-    "ppnp_scores" : ppnp_scores,
-    "ppr_scores"  : ppr_scores,
-    "ase_scores"  : ase_scores,
-    "lse_scores"  : lse_scores,
+    "scores" : scores
 }))
