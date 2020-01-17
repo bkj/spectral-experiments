@@ -19,7 +19,7 @@ from torch import nn
 from torch.nn import functional as F
 
 from helpers import set_seeds, load_csr, to_numpy, get_lcc
-from embedders import embed_ppnp, embed_ase, embed_lse
+from embedders import embed_ppnp, embed_ppr_svd, embed_ase, embed_lse
 
 # --
 # CLI
@@ -35,11 +35,18 @@ def parse_args():
     parser.add_argument('--hidden-dim',    type=int,   default=8)
     parser.add_argument('--lr',            type=int,   default=0.01)
     
+    parser.add_argument('--se-components', type=int,   default=None)
+    
     parser.add_argument('--active-permute',        action="store_true")
     parser.add_argument('--no-normalize-features', action="store_true")
     
     parser.add_argument('--seed', type=int, default=123)
-    return parser.parse_args()
+    args = parser.parse_args()
+    
+    if args.se_components is not None:
+        assert args.se_components == args.hidden_dim
+    
+    return args
 
 
 args = parse_args()
@@ -66,20 +73,21 @@ if args.active_permute:
 # --
 # Fit embeddings
 
-# n_components = args.hidden_dim # fix ase/lse dimension
-n_components = None              # automatic selection
-
 print('embed_ppnp', file=sys.stderr)
 X_ppnp = embed_ppnp(adj, args.ppr_alpha, args.hidden_dim, args.lr, args.epochs, args.batch_size)
 
+print('embed_ppr', file=sys.stderr)
+X_ppr  = embed_ppr_svd(adj, ppr_alpha=args.ppr_alpha, n_components=args.hidden_dim)
+
 print('embed_ase', file=sys.stderr)
-X_ase  = embed_ase(adj, n_components=n_components)
+X_ase  = embed_ase(adj, n_components=args.se_components)
 
 print('embed_lse', file=sys.stderr)
-X_lse  = embed_lse(adj, n_components=n_components)
+X_lse  = embed_lse(adj, n_components=args.se_components)
 
 if not args.no_normalize_features:
     X_ppnp = normalize(X_ppnp, axis=1, norm='l2')
+    X_ppr  = normalize(X_ppr, axis=1, norm='l2')
     X_ase  = normalize(X_ase, axis=1, norm='l2')
     X_lse  = normalize(X_lse, axis=1, norm='l2')
 
@@ -89,6 +97,7 @@ if not args.no_normalize_features:
 idx_train, idx_valid = train_test_split(np.arange(n_nodes), train_size=args.p_train, test_size=1 - args.p_train)
 
 X_ppnp_train, X_ppnp_valid = X_ppnp[idx_train], X_ppnp[idx_valid]
+X_ppr_train, X_ppr_valid   = X_ppr[idx_train], X_ppr[idx_valid]
 X_ase_train, X_ase_valid   = X_ase[idx_train], X_ase[idx_valid]
 X_lse_train, X_lse_valid   = X_lse[idx_train], X_lse[idx_valid]
 y_train, y_valid           = y[idx_train], y[idx_valid]
@@ -107,6 +116,7 @@ def do_score(X_train, y_train, X_valid):
     }
 
 ppnp_scores = do_score(X_ppnp_train, y_train, X_ppnp_valid)
+ppr_scores  = do_score(X_ppr_train, y_train, X_ppr_valid)
 ase_scores  = do_score(X_ase_train, y_train, X_ase_valid)
 lse_scores  = do_score(X_lse_train, y_train, X_lse_valid)
 
@@ -117,10 +127,12 @@ print(json.dumps({
         "n_edges" : int(n_edges),
         
         "ppnp_dim" : X_ppnp.shape[1],
+        "ppr_dim"  : X_ppr.shape[1],
         "ase_dim"  : X_ase.shape[1],
         "lse_dim"  : X_lse.shape[1],
     },
     "ppnp_scores" : ppnp_scores,
+    "ppr_scores"  : ppr_scores,
     "ase_scores"  : ase_scores,
     "lse_scores"  : lse_scores,
 }))
