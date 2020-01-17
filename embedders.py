@@ -26,6 +26,7 @@ def smart_ppr(adj, alpha):
 
 
 def embed_ppnp(*, ppr_array, hidden_dim, lr, epochs, batch_size):
+    """ minimize l2 distance between node embedding and ppr-weighted average of other node embeddings"""
     
     n_nodes = ppr_array.shape[0]
     
@@ -50,6 +51,8 @@ def embed_ppnp(*, ppr_array, hidden_dim, lr, epochs, batch_size):
 
 
 def embed_ppnp_supervised(*, ppr_array, y, idx_train, hidden_dim, lr, epochs, batch_size):
+    """ minimize cross entropy between linear transform of node embedding and labels.  node embedding is ppr-weights average of other node embedding. """
+    
     # !! Could benefit a lot from early stopping
     # !! Could benefit a lot from features
     
@@ -80,8 +83,10 @@ def embed_ppnp_supervised(*, ppr_array, y, idx_train, hidden_dim, lr, epochs, ba
 
 
 def embed_ppr_svd(*, ppr_array, n_components, topk=None):
+    """ svd on ppr_array. if topk != None, sparsify ppr_array by dropping all but topk values"""
+    
     if topk is not None:
-        threshes = np.sort(ppr_array, axis=-1)[:,-topk]
+        threshes = np.sort(ppr_array, axis=-1)[:,-topk] # !! Slow -- should replace w/ argpartition
         ppr_array[ppr_array < threshes.reshape(-1, 1)] = 0
     
     u, _, _  = randomized_svd(ppr_array, n_components=n_components)
@@ -89,6 +94,7 @@ def embed_ppr_svd(*, ppr_array, n_components, topk=None):
 
 
 def embed_ase(*, adj, n_components=None):
+    """ JHU AdjacencySpectralEmbed, w/ default settings """
     X_ase = AdjacencySpectralEmbed(n_components=n_components).fit_transform(adj.toarray())
     if isinstance(X_ase, tuple):
         X_ase = np.column_stack(X_ase)
@@ -97,6 +103,7 @@ def embed_ase(*, adj, n_components=None):
 
 
 def embed_lse(*, adj, n_components=None):
+    """ JHU LaplacianSpectralEmbed, w/ default settings """
     X_lse = LaplacianSpectralEmbed(n_components=n_components).fit_transform(adj.toarray())
     if isinstance(X_lse, tuple):
         X_lse = np.column_stack(X_lse)

@@ -5,11 +5,11 @@
 # --
 # Canonical datasets
 
-python main.py --inpath small_data/cora/cora --hidden-dim 16 | jq .
+python main.py --inpath small_data/cora/cora | jq . | tee results/cora.json
 
-python main.py --inpath small_data/citeseer/citeseer --hidden-dim 16 | jq .
+python main.py --inpath small_data/citeseer/citeseer | jq . | tee results/citeseer.json
 
-python main.py --inpath small_data/pubmed/pubmed
+python main.py --inpath small_data/pubmed/pubmed | jq . | tee results/pubmed.json
 
 # --
 # Desikan
