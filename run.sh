@@ -14,6 +14,8 @@ python main.py --inpath small_data/pubmed/pubmed
 # --
 # Desikan
 
-python ./datasets/desikan.py --inpath ./data/DS72784/subj1-scan1
+python ./datasets/desikan.py --inpath ./data/DS72784/subj1-scan1 | jq .
 
-python main.py --inpath ./data/DS72784/subj1-scan1 | jq .
+python main.py                          \
+    --inpath ./data/DS72784/subj1-scan1 \
+    --se-components 8 | jq .

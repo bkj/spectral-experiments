@@ -21,7 +21,7 @@ from torch import nn
 from torch.nn import functional as F
 
 from helpers import set_seeds, load_csr, to_numpy, get_lcc
-from embedders import embed_ppnp, embed_ppnp_supervised, embed_ppr_svd, embed_ase, embed_lse
+from embedders import smart_ppr, embed_ppnp, embed_ppnp_supervised, embed_ppr_svd, embed_ase, embed_lse
 
 # --
 # CLI
@@ -90,19 +90,21 @@ y_train, y_valid     = y[idx_train], y[idx_valid]
 X_hats = {}
 meta   = {}
 
+ppr_array = smart_ppr(adj, alpha=args.ppr_alpha)
+
 emb_fns = {
-    "ppnp_supervised" : partial(embed_ppnp_supervised, y=y, idx_train=idx_train, ppr_alpha=args.ppr_alpha, hidden_dim=args.hidden_dim, lr=args.lr, epochs=args.epochs, batch_size=args.batch_size),
-    "ppnp"            : partial(embed_ppnp, ppr_alpha=args.ppr_alpha, hidden_dim=args.hidden_dim, lr=args.lr, epochs=args.epochs, batch_size=args.batch_size),
-    "ppr_full"        : partial(embed_ppr_svd, ppr_alpha=args.ppr_alpha, n_components=args.hidden_dim),
-    "ppr_sparse"      : partial(embed_ppr_svd, ppr_alpha=args.ppr_alpha, n_components=args.hidden_dim, topk=args.pprsvd_topk),
-    "ase"             : partial(embed_ase, n_components=args.se_components),
-    "lse"             : partial(embed_lse, n_components=args.se_components),
+    "ppnp_supervised" : partial(embed_ppnp_supervised, ppr_array=ppr_array, y=y, idx_train=idx_train, hidden_dim=args.hidden_dim, lr=args.lr, epochs=args.epochs, batch_size=args.batch_size),
+    "ppnp"            : partial(embed_ppnp, ppr_array=ppr_array, hidden_dim=args.hidden_dim, lr=args.lr, epochs=args.epochs, batch_size=args.batch_size),
+    "ppr_full"        : partial(embed_ppr_svd, ppr_array=ppr_array, n_components=args.hidden_dim),
+    "ppr_sparse"      : partial(embed_ppr_svd, ppr_array=ppr_array, n_components=args.hidden_dim, topk=args.pprsvd_topk),
+    "ase"             : partial(embed_ase, adj=adj, n_components=args.se_components),
+    "lse"             : partial(embed_lse, adj=adj, n_components=args.se_components),
 }
 
 for k, fn in emb_fns.items():
     print(f'main: embedding {k}', file=sys.stderr)
     t         = time()
-    X_hats[k] = fn(adj)
+    X_hats[k] = fn()
     
     meta[k] = {
         "dim"     : X_hats[k].shape[1],
@@ -115,16 +117,17 @@ print('-' * 10, file=sys.stderr)
 # --
 # Train model
 
-def fit_predict(X_train, y_train, X_valid):
-    nX_train = normalize(X_train, axis=1, norm='l2')
-    nX_valid = normalize(X_valid, axis=1, norm='l2')
+def fit_predict(X_train, y_train, X_valid, normalize_X=True):
+    if normalize_X:
+        nX_train = normalize(X_train, axis=1, norm='l2')
+        nX_valid = normalize(X_valid, axis=1, norm='l2')
     
     clf = RandomForestClassifier(n_estimators=512, n_jobs=10) # ?? Should use different classifier?
     clf = clf.fit(nX_train, y_train)
     
     return clf.predict(nX_valid)
 
-def do_score(act, pred):
+def compute_metrics(act, pred):
     return  {
         "accuracy" : float(metrics.accuracy_score(act, pred)),
         "f1_macro" : float(metrics.f1_score(act, pred, average='macro')),
@@ -137,11 +140,13 @@ no_model = set(['ppnp_supervised']) # don't train a model here
 scores = {}
 for k, X_hat in X_hats.items():
     print(f'main: modeling {k}', file=sys.stderr)
+    
     if k in no_model:
-        scores[k]  = do_score(y_valid, X_hat[idx_valid].argmax(axis=-1))
+        pred_valid = X_hat[idx_valid].argmax(axis=-1)
     else:
         pred_valid = fit_predict(X_train=X_hat[idx_train], y_train=y_train, X_valid=X_hat[idx_valid])
-        scores[k]  = do_score(y_valid, pred_valid)
+    
+    scores[k]  = compute_metrics(act=y_valid, pred=pred_valid)
 
 # --
 # Log

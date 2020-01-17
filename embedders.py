@@ -25,10 +25,9 @@ def smart_ppr(adj, alpha):
     return ppr_fn(adj, alpha=alpha)
 
 
-def embed_ppnp(adj, ppr_alpha, hidden_dim, lr, epochs, batch_size, ppr_array=None):
-    ppr_array = smart_ppr(adj, alpha=ppr_alpha) if ppr_array is None else ppr_array.copy()
+def embed_ppnp(*, ppr_array, hidden_dim, lr, epochs, batch_size):
     
-    n_nodes = adj.shape[0]
+    n_nodes = ppr_array.shape[0]
     
     np.fill_diagonal(ppr_array, 0)
     
@@ -50,13 +49,11 @@ def embed_ppnp(adj, ppr_alpha, hidden_dim, lr, epochs, batch_size, ppr_array=Non
     return X_hat
 
 
-def embed_ppnp_supervised(adj, y, idx_train, ppr_alpha, hidden_dim, lr, epochs, batch_size, ppr_array=None):
+def embed_ppnp_supervised(*, ppr_array, y, idx_train, hidden_dim, lr, epochs, batch_size):
     # !! Could benefit a lot from early stopping
     # !! Could benefit a lot from features
     
-    ppr_array = smart_ppr(adj, alpha=ppr_alpha) if ppr_array is None else ppr_array.copy()
-    
-    n_nodes = adj.shape[0]
+    n_nodes = ppr_array.shape[0]
     
     # --
     # Train embedding
@@ -82,9 +79,7 @@ def embed_ppnp_supervised(adj, y, idx_train, ppr_alpha, hidden_dim, lr, epochs, 
     return X_hat
 
 
-def embed_ppr_svd(adj, ppr_alpha, n_components, topk=None, ppr_array=None):
-    ppr_array = smart_ppr(adj, alpha=ppr_alpha) if ppr_array is None else ppr_array.copy()
-    
+def embed_ppr_svd(*, ppr_array, n_components, topk=None):
     if topk is not None:
         threshes = np.sort(ppr_array, axis=-1)[:,-topk]
         ppr_array[ppr_array < threshes.reshape(-1, 1)] = 0
@@ -93,7 +88,7 @@ def embed_ppr_svd(adj, ppr_alpha, n_components, topk=None, ppr_array=None):
     return u
 
 
-def embed_ase(adj, n_components=None):
+def embed_ase(*, adj, n_components=None):
     X_ase = AdjacencySpectralEmbed(n_components=n_components).fit_transform(adj.toarray())
     if isinstance(X_ase, tuple):
         X_ase = np.column_stack(X_ase)
@@ -101,7 +96,7 @@ def embed_ase(adj, n_components=None):
     return X_ase
 
 
-def embed_lse(adj, n_components=None):
+def embed_lse(*, adj, n_components=None):
     X_lse = LaplacianSpectralEmbed(n_components=n_components).fit_transform(adj.toarray())
     if isinstance(X_lse, tuple):
         X_lse = np.column_stack(X_lse)
