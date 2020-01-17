@@ -8,6 +8,7 @@ import sys
 import json
 import argparse
 import numpy as np
+from time import time
 from functools import partial
 
 from sklearn import metrics
@@ -44,7 +45,6 @@ def parse_args():
     # ase/lse
     parser.add_argument('--se-components', type=int,   default=None)
     
-    parser.add_argument('--active-permute',        action="store_true")
     parser.add_argument('--no-normalize-features', action="store_true")
     
     parser.add_argument('--seed', type=int, default=123)
@@ -55,15 +55,22 @@ def parse_args():
     
     return args
 
-
 args = parse_args()
 set_seeds(args.seed)
+
+# >>
+print('manual testing')
+args.inpath        = './data/DS72784/subj1-scan1'
+args.se_components = 8
+# <<
 
 # --
 # IO
 
 adj = load_csr(args.inpath + '.adj.npy', square=True)
-adj = ((adj + adj.T) > 0).astype(np.float32)
+
+# adj = ((adj + adj.T) > 0).astype(np.float32) # symmetrize + binarize
+
 y   = np.load(args.inpath + '.y.npy')
 
 adj, y = get_lcc(adj, y)
@@ -71,28 +78,30 @@ adj, y = get_lcc(adj, y)
 n_nodes = adj.shape[0]
 n_edges = adj.nnz
 
-if args.active_permute:
-    # !! (pro)actively permute data, in case order leaks information
-    p   = np.random.permutation(n_nodes)
-    adj = adj[p][:,p]
-    y   = y[p]
-
 # --
 # Fit embeddings
 
 X_hats = {}
+meta   = {}
 
 emb_fns = {
     # "ppnp" : partial(embed_ppnp, ppr_alpha=args.ppr_alpha, hidden_dim=args.hidden_dim, lr=args.lr, epochs=args.epochs, batch_size=args.batch_size)
-    "ppr_full"   : partial(embed_ppr_svd, ppr_alpha=args.ppr_alpha, n_components=args.hidden_dim),
-    "ppr_sparse" : partial(embed_ppr_svd, ppr_alpha=args.ppr_alpha, n_components=args.hidden_dim, topk=args.pprsvd_topk),
+    # "ppr_full"   : partial(embed_ppr_svd, ppr_alpha=args.ppr_alpha, n_components=args.hidden_dim),
+    # "ppr_sparse" : partial(embed_ppr_svd, ppr_alpha=args.ppr_alpha, n_components=args.hidden_dim, topk=args.pprsvd_topk),
     "ase"        : partial(embed_ase, n_components=args.se_components),
-    "lsa"        : partial(embed_lse, n_components=args.se_components),
+    "lse"        : partial(embed_lse, n_components=args.se_components),
 }
 
 for k, fn in emb_fns.items():
     print(f'main: embedding {k}', file=sys.stderr)
+    t         = time()
     X_hats[k] = fn(adj)
+    
+    meta[k] = {
+        "dim"     : X_hats[k].shape[1],
+        "elapsed" : time() - t
+    }
+    print(f'\telapsed={meta[k]["elapsed"]}', file=sys.stderr)
 
 # --
 # Train/test split
@@ -107,7 +116,7 @@ def do_score(X_train, y_train, X_valid):
     nX_train = normalize(X_train, axis=1, norm='l2')
     nX_valid = normalize(X_valid, axis=1, norm='l2')
     
-    clf = RandomForestClassifier(n_estimators=512, n_jobs=10)
+    clf = RandomForestClassifier(n_estimators=512, n_jobs=10) # ?? Should use different classifier?
     clf = clf.fit(nX_train, y_train)
     
     pred_valid = clf.predict(nX_valid)
@@ -126,10 +135,9 @@ for k, X_hat in X_hats.items():
 # Log
 
 print(json.dumps({
-    "_metadata" : {
-        "dataset" : str(args.inpath),
-        "n_nodes" : int(n_nodes),
-        "n_edges" : int(n_edges),
-    },
-    "scores" : scores
+    "dataset" : str(args.inpath),
+    "n_nodes" : int(n_nodes),
+    "n_edges" : int(n_edges),
+    "meta"    : meta,
+    "scores"  : scores,
 }))

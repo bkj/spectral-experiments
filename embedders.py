@@ -64,9 +64,6 @@ def embed_ppr_svd(adj, ppr_alpha, n_components, topk=None):
 
 
 def embed_ase(adj, n_components=None):
-    if n_components is not None:
-        print(n_components)
-    
     X_ase = AdjacencySpectralEmbed(n_components=n_components).fit_transform(adj.toarray())
     if isinstance(X_ase, tuple):
         X_ase = np.column_stack(X_ase)
@@ -75,9 +72,6 @@ def embed_ase(adj, n_components=None):
 
 
 def embed_lse(adj, n_components=None):
-    if n_components is not None:
-        print(n_components)
-    
     X_lse = LaplacianSpectralEmbed(n_components=n_components).fit_transform(adj.toarray())
     if isinstance(X_lse, tuple):
         X_lse = np.column_stack(X_lse)
