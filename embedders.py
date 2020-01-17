@@ -13,21 +13,24 @@ from torch.nn import functional as F
 
 from graspy.embed import AdjacencySpectralEmbed, LaplacianSpectralEmbed
 
-from ez_ppnp.models import EmbeddingPPNP
-from ez_ppnp.trainer import train_unsupervised
+from ez_ppnp.models import EmbeddingPPNP, SupervisedEmbeddingPPNP
+from ez_ppnp.trainer import train_unsupervised, train_supervised
 from ez_ppnp.ppr import exact_ppr, exact_ppr_joblib, PrecomputedPPR
 
 from helpers import to_numpy
 
-def embed_ppnp(adj, ppr_alpha, hidden_dim, lr, epochs, batch_size):
+def smart_ppr(adj, alpha):
+    n_nodes = adj.shape[0]
+    ppr_fn  = exact_ppr_joblib if n_nodes > 5000 else exact_ppr
+    return ppr_fn(adj, alpha=alpha)
+
+
+def embed_ppnp(adj, ppr_alpha, hidden_dim, lr, epochs, batch_size, ppr_array=None):
+    ppr_array = smart_ppr(adj, alpha=ppr_alpha) if ppr_array is None else ppr_array.copy()
+    
     n_nodes = adj.shape[0]
     
-    ppr_fn    = exact_ppr_joblib if n_nodes > 5000 else exact_ppr
-    ppr_array = ppr_fn(adj, alpha=ppr_alpha)
     np.fill_diagonal(ppr_array, 0)
-    
-    # --
-    # Train embedding
     
     model = EmbeddingPPNP(
         ppr        = PrecomputedPPR(ppr=ppr_array),
@@ -40,20 +43,47 @@ def embed_ppnp(adj, ppr_alpha, hidden_dim, lr, epochs, batch_size):
     
     loss_hist = train_unsupervised(model, lr=lr, epochs=epochs, batch_size=batch_size)
     
-    # --
-    # Compute X_hat
-    
     idx_chunks = np.array_split(np.arange(n_nodes), n_nodes // batch_size)
     with torch.no_grad():
         X_hat = np.row_stack([to_numpy(model(idx_chunk)[1]) for idx_chunk in idx_chunks])
     
     return X_hat
 
-def embed_ppr_svd(adj, ppr_alpha, n_components, topk=None):
+
+def embed_ppnp_supervised(adj, y, idx_train, ppr_alpha, hidden_dim, lr, epochs, batch_size, ppr_array=None):
+    # !! Could benefit a lot from early stopping
+    # !! Could benefit a lot from features
+    
+    ppr_array = smart_ppr(adj, alpha=ppr_alpha) if ppr_array is None else ppr_array.copy()
+    
     n_nodes = adj.shape[0]
     
-    ppr_fn    = exact_ppr_joblib if n_nodes > 5000 else exact_ppr
-    ppr_array = ppr_fn(adj, alpha=ppr_alpha)
+    # --
+    # Train embedding
+    
+    # np.fill_diagonal(ppr_array, 0)
+    
+    model = SupervisedEmbeddingPPNP(
+        ppr        = PrecomputedPPR(ppr=ppr_array),
+        n_nodes    = n_nodes,
+        hidden_dim = hidden_dim,
+        n_classes  = len(set(y))
+    )
+    
+    model = model.cuda()
+    model = model.train()
+    
+    loss_hist = train_supervised(model, y, idx_train, lr=lr, epochs=epochs, batch_size=batch_size)
+    
+    idx_chunks = np.array_split(np.arange(n_nodes), n_nodes // batch_size)
+    with torch.no_grad():
+        X_hat = np.row_stack([to_numpy(model(idx_chunk)) for idx_chunk in idx_chunks])
+    
+    return X_hat
+
+
+def embed_ppr_svd(adj, ppr_alpha, n_components, topk=None, ppr_array=None):
+    ppr_array = smart_ppr(adj, alpha=ppr_alpha) if ppr_array is None else ppr_array.copy()
     
     if topk is not None:
         threshes = np.sort(ppr_array, axis=-1)[:,-topk]

@@ -21,7 +21,7 @@ from torch import nn
 from torch.nn import functional as F
 
 from helpers import set_seeds, load_csr, to_numpy, get_lcc
-from embedders import embed_ppnp, embed_ppr_svd, embed_ase, embed_lse
+from embedders import embed_ppnp, embed_ppnp_supervised, embed_ppr_svd, embed_ase, embed_lse
 
 # --
 # CLI
@@ -58,18 +58,18 @@ def parse_args():
 args = parse_args()
 set_seeds(args.seed)
 
-# >>
-print('manual testing')
-args.inpath        = './data/DS72784/subj1-scan1'
-args.se_components = 8
-# <<
+# # >>
+# print('manual testing')
+# args.inpath        = './data/DS72784/subj1-scan1'
+# args.se_components = 8
+# # <<
 
 # --
 # IO
 
 adj = load_csr(args.inpath + '.adj.npy', square=True)
 
-# adj = ((adj + adj.T) > 0).astype(np.float32) # symmetrize + binarize
+adj = ((adj + adj.T) > 0).astype(np.float32) # symmetrize + binarize
 
 y   = np.load(args.inpath + '.y.npy')
 
@@ -79,17 +79,24 @@ n_nodes = adj.shape[0]
 n_edges = adj.nnz
 
 # --
+# Train/test split
+
+idx_train, idx_valid = train_test_split(np.arange(n_nodes), train_size=args.p_train, test_size=1 - args.p_train)
+y_train, y_valid     = y[idx_train], y[idx_valid]
+
+# --
 # Fit embeddings
 
 X_hats = {}
 meta   = {}
 
 emb_fns = {
-    # "ppnp" : partial(embed_ppnp, ppr_alpha=args.ppr_alpha, hidden_dim=args.hidden_dim, lr=args.lr, epochs=args.epochs, batch_size=args.batch_size)
-    # "ppr_full"   : partial(embed_ppr_svd, ppr_alpha=args.ppr_alpha, n_components=args.hidden_dim),
-    # "ppr_sparse" : partial(embed_ppr_svd, ppr_alpha=args.ppr_alpha, n_components=args.hidden_dim, topk=args.pprsvd_topk),
-    "ase"        : partial(embed_ase, n_components=args.se_components),
-    "lse"        : partial(embed_lse, n_components=args.se_components),
+    "ppnp_supervised" : partial(embed_ppnp_supervised, y=y, idx_train=idx_train, ppr_alpha=args.ppr_alpha, hidden_dim=args.hidden_dim, lr=args.lr, epochs=args.epochs, batch_size=args.batch_size),
+    "ppnp"            : partial(embed_ppnp, ppr_alpha=args.ppr_alpha, hidden_dim=args.hidden_dim, lr=args.lr, epochs=args.epochs, batch_size=args.batch_size),
+    "ppr_full"        : partial(embed_ppr_svd, ppr_alpha=args.ppr_alpha, n_components=args.hidden_dim),
+    "ppr_sparse"      : partial(embed_ppr_svd, ppr_alpha=args.ppr_alpha, n_components=args.hidden_dim, topk=args.pprsvd_topk),
+    "ase"             : partial(embed_ase, n_components=args.se_components),
+    "lse"             : partial(embed_lse, n_components=args.se_components),
 }
 
 for k, fn in emb_fns.items():
@@ -103,33 +110,38 @@ for k, fn in emb_fns.items():
     }
     print(f'\telapsed={meta[k]["elapsed"]}', file=sys.stderr)
 
-# --
-# Train/test split
-
-idx_train, idx_valid = train_test_split(np.arange(n_nodes), train_size=args.p_train, test_size=1 - args.p_train)
-y_train, y_valid     = y[idx_train], y[idx_valid]
+print('-' * 10, file=sys.stderr)
 
 # --
 # Train model
 
-def do_score(X_train, y_train, X_valid):
+def fit_predict(X_train, y_train, X_valid):
     nX_train = normalize(X_train, axis=1, norm='l2')
     nX_valid = normalize(X_valid, axis=1, norm='l2')
     
     clf = RandomForestClassifier(n_estimators=512, n_jobs=10) # ?? Should use different classifier?
     clf = clf.fit(nX_train, y_train)
     
-    pred_valid = clf.predict(nX_valid)
+    return clf.predict(nX_valid)
+
+def do_score(act, pred):
     return  {
-        "accuracy" : float(metrics.accuracy_score(y_valid, pred_valid)),
-        "f1_macro" : float(metrics.f1_score(y_valid, pred_valid, average='macro')),
-        "f1_micro" : float(metrics.f1_score(y_valid, pred_valid, average='micro')),
+        "accuracy" : float(metrics.accuracy_score(act, pred)),
+        "f1_macro" : float(metrics.f1_score(act, pred, average='macro')),
+        "f1_micro" : float(metrics.f1_score(act, pred, average='micro')),
     }
+
+
+no_model = set(['ppnp_supervised']) # don't train a model here
 
 scores = {}
 for k, X_hat in X_hats.items():
     print(f'main: modeling {k}', file=sys.stderr)
-    scores[k] = do_score(X_train=X_hat[idx_train], y_train=y_train, X_valid=X_hat[idx_valid])
+    if k in no_model:
+        scores[k]  = do_score(y_valid, X_hat[idx_valid].argmax(axis=-1))
+    else:
+        pred_valid = fit_predict(X_train=X_hat[idx_train], y_train=y_train, X_valid=X_hat[idx_valid])
+        scores[k]  = do_score(y_valid, pred_valid)
 
 # --
 # Log
