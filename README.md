@@ -18,6 +18,6 @@ In this setup:
 
 ## Notes
 
-- All graphs are symmetrized and binarized -- probably not the most interesting setup
+- How to handle directed graphs?  How to handle weighted graphs?  (See `--no-sym` and `--no-bin` flags.)
 - Not using node features in any of these experiments
 - `RandomForestClassifier` may not always be the best model for downstream tasks
