@@ -93,12 +93,12 @@ meta   = {}
 ppr_array = smart_ppr(adj, alpha=args.ppr_alpha)
 
 emb_fns = {
-    "ppnp_supervised" : partial(embed_ppnp_supervised, ppr_array=ppr_array, y=y, idx_train=idx_train, hidden_dim=args.hidden_dim, lr=args.lr, epochs=args.epochs, batch_size=args.batch_size),
-    "ppnp"            : partial(embed_ppnp, ppr_array=ppr_array, hidden_dim=args.hidden_dim, lr=args.lr, epochs=args.epochs, batch_size=args.batch_size),
-    "ppr_full"        : partial(embed_ppr_svd, ppr_array=ppr_array, n_components=args.hidden_dim),
+    # "ppnp_supervised" : partial(embed_ppnp_supervised, ppr_array=ppr_array, y=y, idx_train=idx_train, hidden_dim=args.hidden_dim, lr=args.lr, epochs=args.epochs, batch_size=args.batch_size),
+    # "ppnp"            : partial(embed_ppnp, ppr_array=ppr_array, hidden_dim=args.hidden_dim, lr=args.lr, epochs=args.epochs, batch_size=args.batch_size),
+    # "ppr_full"        : partial(embed_ppr_svd, ppr_array=ppr_array, n_components=args.hidden_dim),
     "ppr_sparse"      : partial(embed_ppr_svd, ppr_array=ppr_array, n_components=args.hidden_dim, topk=args.pprsvd_topk),
-    "ase"             : partial(embed_ase, adj=adj, n_components=args.se_components),
-    "lse"             : partial(embed_lse, adj=adj, n_components=args.se_components),
+    # "ase"             : partial(embed_ase, adj=adj, n_components=args.se_components),
+    # "lse"             : partial(embed_lse, adj=adj, n_components=args.se_components),
 }
 
 for k, fn in emb_fns.items():
