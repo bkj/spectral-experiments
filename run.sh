@@ -5,11 +5,9 @@
 # --
 # Canonical datasets
 
-python main.py --inpath small_data/cora/cora | jq . | tee results/cora.json
-
-python main.py --inpath small_data/citeseer/citeseer | jq . | tee results/citeseer.json
-
-python main.py --inpath small_data/pubmed/pubmed | jq . | tee results/pubmed.json
+CUDA_VISIBLE_DEVICES=6 python main.py --inpath small_data/cora/cora         | jq . | tee results/cora.json
+CUDA_VISIBLE_DEVICES=6 python main.py --inpath small_data/citeseer/citeseer | jq . | tee results/citeseer.json
+CUDA_VISIBLE_DEVICES=6 python main.py --inpath small_data/pubmed/pubmed     | jq . | tee results/pubmed.json
 
 # --
 # Desikan

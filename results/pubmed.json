@@ -5,27 +5,27 @@
   "meta": {
     "ppnp_supervised": {
       "dim": 3,
-      "elapsed": 5.519259691238403
+      "elapsed": 6.075355052947998
     },
     "ppnp": {
       "dim": 8,
-      "elapsed": 2.565176486968994
+      "elapsed": 2.390730142593384
     },
     "ppr_full": {
       "dim": 8,
-      "elapsed": 1.7592692375183105
+      "elapsed": 1.2963902950286865
     },
     "ppr_sparse": {
       "dim": 8,
-      "elapsed": 24.792875051498413
+      "elapsed": 5.4489545822143555
     },
     "ase": {
       "dim": 11,
-      "elapsed": 19.380109310150146
+      "elapsed": 14.820575475692749
     },
     "lse": {
       "dim": 10,
-      "elapsed": 70.54803967475891
+      "elapsed": 57.99991321563721
     }
   },
   "scores": {
