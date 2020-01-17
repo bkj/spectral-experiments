@@ -86,8 +86,8 @@ def embed_ppr_svd(*, ppr_array, n_components, topk=None):
     """ svd on ppr_array. if topk != None, sparsify ppr_array by dropping all but topk values"""
     
     if topk is not None:
-        threshes = np.sort(ppr_array, axis=-1)[:,-topk] # !! Slow -- should replace w/ argpartition
-        ppr_array[ppr_array < threshes.reshape(-1, 1)] = 0
+        thresholds = np.partition(z, -k, axis=-1)[:,-k]
+        ppr_array[ppr_array < thresholds.reshape(-1, 1)] = 0
     
     u, _, _  = randomized_svd(ppr_array, n_components=n_components)
     return u
